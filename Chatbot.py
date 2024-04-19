@@ -131,7 +131,7 @@ with st.sidebar:
 
     if 'selection_output' not in st.session_state:
         st.session_state['selection_output'] = []
-    if st.session_state.selection_output:
+    if  st.session_state.selection_output:
         options = st.multiselect(
         'Please select one or more twitter',
         st.session_state.selection_output,
@@ -145,6 +145,10 @@ with st.sidebar:
     )
     content_length_limit = st.number_input("Enter length", min_value=0, max_value=10000, step=1,help='The minimum length of tweet content. Only tweets exceeding this length will be returned.')
 
+    show_fields = st.multiselect(
+    'Please select one or more fields',
+    ['author','timestamp','source link','tweet content'],
+    )
 
 def contains_any_efficient(string, char_list):
     """检查字符串是否包含列表中的任一字符或子字符串"""
@@ -152,6 +156,76 @@ def contains_any_efficient(string, char_list):
         if item in string:
             return True
     return False
+
+def all_elements_in_another(list1, list2):
+    """检查 list1 的所有元素是否都在 list2 中"""
+    return set(list2).issubset(set(list1))
+
+def get_return_tweet(select_return_fields,row):
+    if not select_return_fields:
+        return f'''author: {row[1]} 
+timestamp: {row[3]} 
+source link: {row[0]} 
+tweet content: {row[2]} {row[4]} 
+-------
+'''
+    if all_elements_in_another(select_return_fields, ['author','timestamp']) or all_elements_in_another(select_return_fields, ['author','timestamp','tweet content']):
+        return f'''author: {row[1]} 
+timestamp: {row[3]} 
+tweet content: {row[2]} {row[4]} 
+-------
+'''
+    elif all_elements_in_another(select_return_fields, ['author','source link','tweet content']):
+        return f'''author: {row[1]} 
+source link: {row[0]} 
+tweet content: {row[2]} {row[4]} 
+-------
+'''
+    elif all_elements_in_another(select_return_fields, ['timestamp','source link','tweet content']) or all_elements_in_another(select_return_fields, ['timestamp','source link']):
+        return f'''timestamp: {row[3]} 
+source link: {row[0]} 
+tweet content: {row[2]} {row[4]} 
+-------
+'''
+    elif all_elements_in_another(select_return_fields, ['author','source link']):
+        return f'''author: {row[1]} 
+source link: {row[0]} 
+tweet content: {row[2]} {row[4]} 
+-------
+'''
+    elif all_elements_in_another(select_return_fields, ['author','tweet content']):
+        return f'''author: {row[1]} 
+tweet content: {row[2]} {row[4]} 
+-------
+'''
+    elif all_elements_in_another(select_return_fields, ['tweet content']):
+        return f'''tweet content: {row[2]} {row[4]} 
+-------
+'''
+    elif all_elements_in_another(select_return_fields, ['author']):
+        return f'''author: {row[1]} 
+tweet content: {row[2]} {row[4]} 
+-------
+'''
+    elif all_elements_in_another(select_return_fields, ['source link']):
+        return f'''source link: {row[0]} 
+tweet content: {row[2]} {row[4]} 
+-------
+'''
+    elif all_elements_in_another(select_return_fields, ['timestamp']):
+        return f'''timestamp: {row[3]} 
+tweet content: {row[2]} {row[4]} 
+-------
+'''
+    else:
+        return f'''author: {row[1]} 
+timestamp: {row[3]} 
+source link: {row[0]} 
+tweet content: {row[2]} {row[4]} 
+-------
+'''
+
+
 
 def get_tweet_by_time():
     total_text = ''
@@ -173,14 +247,16 @@ def get_tweet_by_time():
             # 判断是否包含某个字符
             if key_words and not contains_any_efficient((str({row[2]})+str({row[4]})),key_words):
                 continue
-            tweet = f'''author: {row[1]} 
-timestamp: {row[3]} 
-source link: {row[0]} 
-tweet content: {row[2]} {row[4]} 
--------
-'''
+            tweet = get_return_tweet(show_fields,row)
+#             tweet = f'''author: {row[1]} 
+# timestamp: {row[3]} 
+# source link: {row[0]} 
+# tweet content: {row[2]} {row[4]} 
+# -------
+# '''
             total_text+=tweet
     return total_text
+
 
 
 def num_tokens_from_string(string: str, encoding_name: str) -> int:
@@ -213,7 +289,14 @@ if st.session_state.last_content:
         st.write('token length = '+ str(token_num))
 
 prompt = st.chat_input("please input prompt")
-if prompt and options:
+
+if prompt:
+    if not project_options:
+        st.info("please select project.")
+        st.stop()
+    if not options:
+        st.info("please select twitter.")
+        st.stop()
     delta = abs(end_datetime - start_datetime)
     
     if delta <= timedelta(days=3) :
