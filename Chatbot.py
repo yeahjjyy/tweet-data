@@ -25,6 +25,7 @@ st.markdown(hide_st_style, unsafe_allow_html=True)
 def get_engine():
     engine = create_engine(
         st.secrets["url"]
+
     )
     return engine
 
@@ -165,16 +166,38 @@ def all_elements_in_another(list1, list2):
     return set(list2).issubset(set(list1))
 
 def get_return_tweet(select_return_fields,row):
+    # likeCount {row[5]} replyCount {row[6]} quoteCount {row[7]} retweetCount {row[8]} 
+    likeCount = row[5]
+    if not likeCount:
+        likeCount = 'NA'
+    replyCount = row[6]
+    if not replyCount:
+        replyCount = 'NA'    
+    quoteCount = row[7]
+    if not quoteCount:
+        quoteCount = 'NA'  
+    retweetCount = row[8]
+    if not retweetCount:
+        retweetCount = 'NA'
+
     if not select_return_fields:
         return f'''author: {row[1]} 
 timestamp: {row[3]} 
 source link: {row[0]} 
 tweet content: {row[2]} {row[4]} 
+statics: likeCount {likeCount} replyCount {replyCount} quoteCount {quoteCount} retweetCount {retweetCount} 
 -------
 '''
     if all_elements_in_another(select_return_fields, ['author','timestamp']) or all_elements_in_another(select_return_fields, ['author','timestamp','tweet content']):
         return f'''author: {row[1]} 
 timestamp: {row[3]} 
+tweet content: {row[2]} {row[4]} 
+-------
+'''
+    elif all_elements_in_another(select_return_fields, ['author','timestamp','source link','tweet content']):
+        return f'''author: {row[1]} 
+timestamp: {row[3]} 
+source link: {row[0]} 
 tweet content: {row[2]} {row[4]} 
 -------
 '''
@@ -225,6 +248,7 @@ tweet content: {row[2]} {row[4]}
 timestamp: {row[3]} 
 source link: {row[0]} 
 tweet content: {row[2]} {row[4]} 
+statics: likeCount {likeCount} replyCount {replyCount} quoteCount {quoteCount} retweetCount {retweetCount} 
 -------
 '''
 
@@ -238,10 +262,10 @@ def get_tweet_by_time():
     with engine.connect() as conn:
         if 'all' in options:
             influencer_ids = ", ".join(f"'{elem}'" for elem in st.session_state.selection_output)
-            sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text from twitter_base_content  where influencer_id in ({influencer_ids}) and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}'")
+            sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text,like_count,reply_count,quote_count,retweet_count from twitter_base_content  where influencer_id in ({influencer_ids}) and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}'")
         else:
             influencer_ids = ", ".join(f"'{elem}'" for elem in options)
-            sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text from twitter_base_content  where influencer_id in ({influencer_ids}) and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}'")
+            sql = text(f"select tweet_id, influencer_id,original_text ->> 'text' as tweet_content, publish_time, original_text -> 'quote' ->> 'text' as quote_text,like_count,reply_count,quote_count,retweet_count from twitter_base_content  where influencer_id in ({influencer_ids}) and publish_time_ts BETWEEN '{str(start_formatted_date)}' AND '{str(end_formatted_date)}'")
         result = conn.execute(sql)
         for row in result:
             # 判断长度
