@@ -25,7 +25,6 @@ st.markdown(hide_st_style, unsafe_allow_html=True)
 def get_engine():
     engine = create_engine(
         st.secrets["url"]
-
     )
     return engine
 
@@ -151,7 +150,7 @@ with st.sidebar:
 
     show_fields = st.multiselect(
     'Please select one or more fields',
-    ['author','timestamp','source link','tweet content'],
+    ['author','timestamp','source link','tweet content','statics','hot'],
     )
 
 def contains_any_efficient(string, char_list):
@@ -163,22 +162,31 @@ def contains_any_efficient(string, char_list):
 
 def all_elements_in_another(list1, list2):
     """检查 list1 的所有元素是否都在 list2 中"""
-    return set(list2).issubset(set(list1))
+    return set(list1).issubset(set(list2))
 
 def get_return_tweet(select_return_fields,row):
     # likeCount {row[5]} replyCount {row[6]} quoteCount {row[7]} retweetCount {row[8]} 
+    hot = 0
     likeCount = row[5]
     if not likeCount:
         likeCount = 'NA'
+    else:
+        hot += likeCount
     replyCount = row[6]
     if not replyCount:
-        replyCount = 'NA'    
+        replyCount = 'NA'
+    else:
+        hot += replyCount           
     quoteCount = row[7]
     if not quoteCount:
-        quoteCount = 'NA'  
+        quoteCount = 'NA'
+    else:
+        hot += quoteCount  
     retweetCount = row[8]
     if not retweetCount:
         retweetCount = 'NA'
+    else:
+        hot += retweetCount
 
     if not select_return_fields:
         return f'''author: {row[1]} 
@@ -186,6 +194,7 @@ timestamp: {row[3]}
 source link: {row[0]} 
 tweet content: {row[2]} {row[4]} 
 statics: likeCount {likeCount} replyCount {replyCount} quoteCount {quoteCount} retweetCount {retweetCount} 
+hot: {hot if hot>0 else 'NA'}
 -------
 '''
     if all_elements_in_another(select_return_fields, ['author','timestamp']) or all_elements_in_another(select_return_fields, ['author','timestamp','tweet content']):
@@ -201,6 +210,32 @@ source link: {row[0]}
 tweet content: {row[2]} {row[4]} 
 -------
 '''
+    elif all_elements_in_another(select_return_fields, ['author','timestamp','source link','tweet content','statics']):
+        return f'''author: {row[1]} 
+timestamp: {row[3]} 
+source link: {row[0]} 
+tweet content: {row[2]} {row[4]}
+statics: likeCount {likeCount} replyCount {replyCount} quoteCount {quoteCount} retweetCount {retweetCount} 
+-------
+'''
+    elif all_elements_in_another(select_return_fields, ['author','timestamp','source link','tweet content','hot']):
+        return f'''author: {row[1]} 
+timestamp: {row[3]} 
+source link: {row[0]} 
+tweet content: {row[2]} {row[4]}
+hot: {hot if hot>0 else 'NA'}
+-------
+'''
+    elif all_elements_in_another(select_return_fields, ['author','timestamp','source link','tweet content','statics','hot']):
+        return f'''author: {row[1]} 
+timestamp: {row[3]} 
+source link: {row[0]} 
+tweet content: {row[2]} {row[4]}
+statics: likeCount {likeCount} replyCount {replyCount} quoteCount {quoteCount} retweetCount {retweetCount} 
+hot: {hot if hot>0 else 'NA'}
+-------
+'''
+ 
     elif all_elements_in_another(select_return_fields, ['author','source link','tweet content']):
         return f'''author: {row[1]} 
 source link: {row[0]} 
@@ -249,6 +284,7 @@ timestamp: {row[3]}
 source link: {row[0]} 
 tweet content: {row[2]} {row[4]} 
 statics: likeCount {likeCount} replyCount {replyCount} quoteCount {quoteCount} retweetCount {retweetCount} 
+hot: {hot if hot>0 else 'NA'}
 -------
 '''
 
