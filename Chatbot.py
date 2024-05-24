@@ -144,7 +144,7 @@ with st.sidebar:
         label='Enter Keywords tag:',
         text='Press enter to add tweet keywords tag',
         suggestions=['btc'],
-        maxtags = 5
+        maxtags = 50
     )
     content_length_limit = st.number_input("Enter length", min_value=0, max_value=10000, step=1,help='The minimum length of tweet content. Only tweets exceeding this length will be returned.')
 
